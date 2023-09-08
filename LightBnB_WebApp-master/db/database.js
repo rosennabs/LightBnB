@@ -1,6 +1,18 @@
 const properties = require("./json/properties.json");
 const users = require("./json/users.json");
 
+
+// Connect to the lightbnb database
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  user: 'rosennabs',
+  password: '123',
+  host: 'localhost',
+  database: 'lightbnb'
+});
+
+
 /// Users
 
 /**
@@ -9,15 +21,31 @@ const users = require("./json/users.json");
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function (email) {
-  let resolvedUser = null;
-  for (const userId in users) {
-    const user = users[userId];
-    if (user && user.email.toLowerCase() === email.toLowerCase()) {
-      resolvedUser = user;
-    }
-  }
-  return Promise.resolve(resolvedUser);
+  
+  //Retrieve data from lightbnb database and Parameterize query to prevent SQL injection
+  const queryString = `
+  SELECT * FROM users
+  WHERE email = $1
+  `;
+
+  const values = [email]; //Email as the first element is represented by $1 above
+
+  return pool.query(queryString, values)
+    .then((res) => {
+      //Checks if any user was found
+      if (res.rows.length === 0) {
+        return null;
+      } 
+      // console.log(res.rows);
+      return res.rows;
+      
+    })
+    .catch((err) => console.error(err.message));
 };
+// getUserWithEmail('rosennabs@gmail.com')
+
+
+
 
 /**
  * Get a single user from the database given their id.
@@ -25,8 +53,23 @@ const getUserWithEmail = function (email) {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function (id) {
-  return Promise.resolve(users[id]);
+
+  const values = [id];
+
+  return pool.query(`SELECT * FROM users WHERE id = $1`, values)
+    .then((res) => {
+      //Checks if any user was found
+      if (res.rows.length === 0) {
+        return null;
+      } 
+      return res.rows;
+       
+    })
+    .catch((err) => console.error(err.message));
 };
+
+
+
 
 /**
  * Add a new user to the database.
@@ -34,11 +77,29 @@ const getUserWithId = function (id) {
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
+  const queryString = `INSERT INTO users (name, email, password)
+  VALUES($1, $2, $3)
+  RETURNING *`; // Returns the object that was inserted
+
+  const values = [user.name, user.email, user.password];
+
+  return pool.query(queryString, values)
+    .then((res) => {
+      return res.rows;
+    })
+    .catch((err) => console.error(err.message));
+
 };
+
+// const user = {
+//   name: 'John Doe',
+//   email: 'johndoe@outlook.com',
+//   password: '$2a$10$FB/BOAVhpuLvpOREQVmvmezD4ED/.JBIDRh70tGevYzYzQgFId2u.'
+// }
+// addUser(user);
+
+
+
 
 /// Reservations
 
@@ -48,8 +109,27 @@ const addUser = function (user) {
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-  return getAllProperties(null, 2);
-};
+  
+  const queryString = `SELECT reservations.*, properties.title as property_title, cost_per_night, avg(property_reviews.rating) as average_rating
+  FROM properties
+  JOIN reservations ON property_id = properties.id
+  JOIN property_reviews ON reservation_id = reservations.id
+  WHERE reservations.guest_id = $1
+  GROUP BY properties.id, reservations.id
+  ORDER BY reservations.start_date
+  LIMIT $2`;
+
+  const values = [guest_id, limit];
+
+  return pool.query(queryString, values)
+    .then((res) => {
+      return res.rows;
+    })
+    .catch((err) => console.error(err.message));
+}; 
+// getAllReservations (7, 10)
+
+ 
 
 /// Properties
 
@@ -60,12 +140,23 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
-  const limitedProperties = {};
-  for (let i = 1; i <= limit; i++) {
-    limitedProperties[i] = properties[i];
-  }
-  return Promise.resolve(limitedProperties);
+  
+  //Parameterize query to prevent SQL injection
+  const queryString = `
+  SELECT * FROM properties
+  LIMIT $1;
+  `;
+
+  const values = [limit];
+
+  return pool.query(queryString, values)
+  .then((res) => {
+    return res.rows;
+  })
+  .catch((err) => console.error(err.message));
 };
+
+
 
 /**
  * Add a property to the database
@@ -78,6 +169,9 @@ const addProperty = function (property) {
   properties[propertyId] = property;
   return Promise.resolve(property);
 };
+
+
+
 
 module.exports = {
   getUserWithEmail,
