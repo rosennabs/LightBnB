@@ -12,7 +12,7 @@ const pool = new Pool({
   database: 'lightbnb'
 });
 
-
+//___________________________________________________________________________________________________________________
 /// Users
 
 /**
@@ -27,24 +27,25 @@ const getUserWithEmail = function (email) {
   SELECT * FROM users
   WHERE email = $1
   `;
-
+  
   const values = [email]; //Email as the first element is represented by $1 above
 
   return pool.query(queryString, values)
     .then((res) => {
+      
       //Checks if any user was found
       if (res.rows.length === 0) {
         return null;
       } 
-      // console.log(res.rows);
-      return res.rows;
+      
+      return res.rows[0]; //returns the user object in the rows array
       
     })
     .catch((err) => console.error(err.message));
 };
-// getUserWithEmail('rosennabs@gmail.com')
 
 
+//___________________________________________________________________________________________________________________
 
 
 /**
@@ -54,19 +55,20 @@ const getUserWithEmail = function (email) {
  */
 const getUserWithId = function (id) {
 
-  return pool.query(`SELECT * FROM users WHERE id = $1`, [id])
+  return pool.query(`SELECT * FROM users WHERE id = $1`, [id]) // Execute query using a refactored version of the queryString and value variables format above
     .then((res) => {
       //Checks if any user was found
       if (res.rows.length === 0) {
         return null;
       } 
-      return res.rows;
+      return res.rows[0]; // return user if found
        
     })
     .catch((err) => console.error(err.message));
 };
 
 
+//___________________________________________________________________________________________________________________
 
 
 /**
@@ -78,7 +80,7 @@ const addUser = function (user) {
   //Assign user table columns to a variable
   const userKeys = 'name, email, password';
 
-  //Extract object values provided by user
+  //Extract object values provided by user into an array
   const userValues = Object.values(user);
 
   //Create a placeholder for the userValues to be used for parameterization. Add 1 to the index of each element in the userValues array
@@ -93,21 +95,12 @@ const addUser = function (user) {
 
   return pool.query(queryString, userValues)
     .then((res) => {
-      console.log(res.rows);
-      return res.rows;
+      return res.rows[0];
     })
     .catch((err) => console.error(err.message));
 
 };
-
-// const user = {
-//   name: 'John Doe',
-//   email: 'johndoe@outlook.com',
-//   password: '$2a$10$FB/BOAVhpuLvpOREQVmvmezD4ED/.JBIDRh70tGevYzYzQgFId2u.'
-// }
-// addUser(user);
-
-
+//___________________________________________________________________________________________________________________
 
 
 /// Reservations
@@ -210,7 +203,6 @@ const getAllProperties = function (options, limit = 10) {
 
   return pool.query(queryString, values)
   .then((res) => { 
-    console.log(res.rows)
     return res.rows;
   })
   .catch((err) => console.error(err.message));
@@ -243,7 +235,6 @@ const addProperty = function (property) {
   //Execute the query
   return pool.query(queryString, propertyValues)
   .then((res) => {
-    console.log(res.rows);
     return res.rows;
   })
   .catch((err) => console.error(err.message));
