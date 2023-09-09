@@ -75,16 +75,25 @@ const getUserWithId = function (id) {
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
+  //Assign user table columns to a variable
+  const userKeys = 'name, email, password';
+
+  //Extract object values provided by user
+  const userValues = Object.values(user);
+
+  //Create a placeholder for the userValues to be used for parameterization. Add 1 to the index of each element in the userValues array
+  const valuesPlaceholders = userValues.map((_, index) => `$${index + 1}`).join(', ');
+
+  // Define the query
   const queryString = `
-  INSERT INTO users (name, email, password)
-  VALUES($1, $2, $3)
+  INSERT INTO users (${userKeys})
+  VALUES(${valuesPlaceholders})
   RETURNING *;
   `; // Returns the object that was inserted
 
-  const values = [user.name, user.email, user.password];
-
-  return pool.query(queryString, values)
+  return pool.query(queryString, userValues)
     .then((res) => {
+      console.log(res.rows);
       return res.rows;
     })
     .catch((err) => console.error(err.message));
@@ -206,7 +215,7 @@ const getAllProperties = function (options, limit = 10) {
   })
   .catch((err) => console.error(err.message));
 };
-getAllProperties({ city: 'Birtle', minimum_price_per_night: 50360, maximum_price_per_night: 90224, minimum_rating: 3}); 
+//getAllProperties({ city: 'Birtle', minimum_price_per_night: 50360, maximum_price_per_night: 90224, minimum_rating: 3}); 
 
 
 /**
@@ -215,12 +224,48 @@ getAllProperties({ city: 'Birtle', minimum_price_per_night: 50360, maximum_price
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function (property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+
+  //Assign the property columns to a variable
+  const propertyKeys = 'owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms';
+
+  //Extract property object values provided by user into an array
+  const propertyValues = Object.values(property);
+
+  // Create placeholders for values by adding 1 to each index in the propertyValues array to match PostgreSQL parameterization indexes
+  const valuesPlaceholders = propertyValues.map((_, index) => `$${index + 1}`).join(', ');
+
+  const queryString = `
+  INSERT INTO properties (${propertyKeys})
+  VALUES (${valuesPlaceholders})
+  RETURNING *;
+  `;
+
+  //Execute the query
+  return pool.query(queryString, propertyValues)
+  .then((res) => {
+    console.log(res.rows);
+    return res.rows;
+  })
+  .catch((err) => console.error(err.message));
+    
 };
 
+// addProperty({
+//   owner_id: 1,
+//   title: 'Lay Castle',
+//   description: 'Where all the magic happens',
+//   thumbnail_photo_url: 'www.image.com',
+//   cover_photo_url: 'www.photo.com',
+//   cost_per_night: 34562,
+//   street: 'Love',
+//   city: 'The city of love',
+//   province: 'Yukon',
+//   post_code: 'T6E',
+//   country: 'Canada',
+//   parking_spaces: 2,
+//   number_of_bathrooms: 3,
+//   number_of_bedrooms: 4
+// })
 
 
 
