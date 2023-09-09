@@ -131,9 +131,8 @@ const getAllReservations = function (guest_id, limit = 10) {
     })
     .catch((err) => console.error(err.message));
 }; 
-// getAllReservations (7,)
 
- 
+ //___________________________________________________________________________________________________________________
 
 /// Properties
 
@@ -209,6 +208,8 @@ const getAllProperties = function (options, limit = 10) {
 };
 //getAllProperties({ city: 'Birtle', minimum_price_per_night: 50360, maximum_price_per_night: 90224, minimum_rating: 3}); 
 
+//___________________________________________________________________________________________________________________
+
 
 /**
  * Add a property to the database
@@ -217,13 +218,14 @@ const getAllProperties = function (options, limit = 10) {
  */
 const addProperty = function (property) {
 
-  //Assign the property columns to a variable
-  const propertyKeys = 'owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms';
-
-  //Extract property object values provided by user into an array
+  //Assign the property keys to a variable as just strings
+  const propertyKeys = Object.keys(property).join(", ");
+  
+  //Extract property object values provided by the user
   const propertyValues = Object.values(property);
+ 
 
-  // Create placeholders for values by adding 1 to each index in the propertyValues array to match PostgreSQL parameterization indexes
+  // Create placeholders for values by adding 1 to each index in the propertyValues array to match PostgreSQL parameterization indexing
   const valuesPlaceholders = propertyValues.map((_, index) => `$${index + 1}`).join(', ');
 
   const queryString = `
@@ -234,12 +236,15 @@ const addProperty = function (property) {
 
   //Execute the query
   return pool.query(queryString, propertyValues)
-  .then((res) => {
-    return res.rows;
+    
+    .then((res) => {
+    return res.rows[0];
   })
   .catch((err) => console.error(err.message));
     
 };
+
+//___________________________________________________________________________________________________________________
 
 // addProperty({
 //   owner_id: 1,
