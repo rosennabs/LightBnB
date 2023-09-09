@@ -54,9 +54,7 @@ const getUserWithEmail = function (email) {
  */
 const getUserWithId = function (id) {
 
-  const values = [id];
-
-  return pool.query(`SELECT * FROM users WHERE id = $1`, values)
+  return pool.query(`SELECT * FROM users WHERE id = $1`, [id])
     .then((res) => {
       //Checks if any user was found
       if (res.rows.length === 0) {
@@ -77,9 +75,11 @@ const getUserWithId = function (id) {
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
-  const queryString = `INSERT INTO users (name, email, password)
+  const queryString = `
+  INSERT INTO users (name, email, password)
   VALUES($1, $2, $3)
-  RETURNING *`; // Returns the object that was inserted
+  RETURNING *;
+  `; // Returns the object that was inserted
 
   const values = [user.name, user.email, user.password];
 
@@ -110,14 +110,16 @@ const addUser = function (user) {
  */
 const getAllReservations = function (guest_id, limit = 10) {
   
-  const queryString = `SELECT reservations.*, properties.title as property_title, cost_per_night, avg(property_reviews.rating) as average_rating
+  const queryString = `
+  SELECT reservations.*, properties.title as property_title, cost_per_night, avg(property_reviews.rating) as average_rating
   FROM properties
   JOIN reservations ON property_id = properties.id
   JOIN property_reviews ON reservation_id = reservations.id
   WHERE reservations.guest_id = $1
   GROUP BY properties.id, reservations.id
   ORDER BY reservations.start_date
-  LIMIT $2`;
+  LIMIT $2;
+  `;
 
   const values = [guest_id, limit];
 
@@ -127,7 +129,7 @@ const getAllReservations = function (guest_id, limit = 10) {
     })
     .catch((err) => console.error(err.message));
 }; 
-// getAllReservations (7, 10)
+// getAllReservations (7,)
 
  
 
@@ -140,22 +142,71 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
-  
-  //Parameterize query to prevent SQL injection
-  const queryString = `
-  SELECT * FROM properties
-  LIMIT $1;
-  `;
 
-  const values = [limit];
+  const values = []; // User's selected options used to parameterize queryString
+  const filters = []; // Stores user's filters
+  
+  //Dynamically develop and parameterize query to prevent SQL injection
+  let queryString = `
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
+  FROM properties
+  JOIN property_reviews ON property_id = properties.id
+  `; 
+
+  if (options.city) { // Checks if the options object has a city property as filtered by the user
+    values.push(`%${options.city}%`) // Adds the specified city name to values
+    filters.push(`city LIKE $${values.length} `); // Push the query with the new length of filters as a placeholder for city name
+  }
+
+  if (options.owner_id) { //Only return properties belonging to filtered owner
+    values.push(options.owner_id) // Push owner id to values
+    filters.push(`owner_id = $${values.length} `); // Push the query with the new length of filters as a placeholder for owner_id
+  }
+
+  if (options.minimum_price_per_night && options.maximum_price_per_night) { // Return properties within the price range provided by user
+    values.push(options.minimum_price_per_night);
+    filters.push(`cost_per_night >= $${values.length}`);
+
+    values.push(options.maximum_price_per_night);
+    filters.push(`cost_per_night <= $${values.length}`);
+
+  } else if (options.minimum_price_per_night) { //Return properties at only a minimum cost provided by user
+    values.push(options.minimum_price_per_night);
+    filters.push(`cost_per_night >= $${values.length}`);
+
+  } else if (options.maximum_price_per_night) { //Return properties at only a maximum cost provided by user
+    values.push(options.maximum_price_per_night);
+    filters.push(`cost_per_night <= $${values.length}`);
+  }
+  
+  // Concatenate the WHERE clause to queryString if any of the filters above is specified by user
+  if (filters.length > 0) {
+    queryString += `WHERE ${filters.join(' AND ')}`;
+  }
+
+  queryString += `
+  GROUP BY properties.id`
+
+  if (options.minimum_rating) { // Returns the minimum average rating specified by user
+    values.push(options.minimum_rating);
+    queryString += `
+    HAVING avg(property_reviews.rating) >= $${values.length}`;
+  }
+
+  values.push(limit); // Specify limit of data to be returned
+  queryString += `
+  ORDER BY cost_per_night
+  LIMIT $${values.length};
+  `; 
 
   return pool.query(queryString, values)
-  .then((res) => {
+  .then((res) => { 
+    console.log(res.rows)
     return res.rows;
   })
   .catch((err) => console.error(err.message));
 };
-
+getAllProperties({ city: 'Birtle', minimum_price_per_night: 50360, maximum_price_per_night: 90224, minimum_rating: 3}); 
 
 
 /**
