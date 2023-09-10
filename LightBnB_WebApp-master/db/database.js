@@ -1,16 +1,19 @@
-const properties = require("./json/properties.json");
-const users = require("./json/users.json");
 
-
-// Connect to the lightbnb database
+// Connect to the lightbnb database. Require pool connection for a multi-user purpose app 
 const { Pool } = require('pg');
 
-const pool = new Pool({
-  user: 'rosennabs',
-  password: '123',
-  host: 'localhost',
-  database: 'lightbnb'
-});
+//Require the dotenv package to load variables from the .env file containing sensitive login info
+require("dotenv").config();
+
+const config = {
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+};
+
+const pool = new Pool(config);
 
 //___________________________________________________________________________________________________________________
 /// Users
