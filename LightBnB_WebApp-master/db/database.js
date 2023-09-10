@@ -144,8 +144,8 @@ const getAllReservations = function (guest_id, limit = 10) {
  */
 const getAllProperties = function (options, limit = 10) {
 
-  const values = []; // User's selected options used to parameterize queryString
-  const filters = []; // Stores user's filters
+  const values = []; // Stores user's filters
+  const filters = []; // Stores parameterized version of user's filters
   
   //Dynamically develop and parameterize query to prevent SQL injection
   let queryString = `
@@ -154,17 +154,20 @@ const getAllProperties = function (options, limit = 10) {
   JOIN property_reviews ON property_id = properties.id
   `; 
 
-  if (options.city) { // Checks if the options object has a city property as filtered by the user
-    values.push(`%${options.city}%`) // Adds the specified city name to values
-    filters.push(`city LIKE $${values.length} `); // Push the query with the new length of filters as a placeholder for city name
+  // Filter by city
+  if (options.city) {
+    values.push(`%${options.city.charAt(0).toUpperCase() + options.city.slice(1).toLowerCase()}%`) // Convert city to sentence case and push it to values
+    filters.push(`city LIKE $${values.length} `); // Push the query with the new length of filters as a placeholder for city
   }
 
-  if (options.owner_id) { //Only return properties belonging to filtered owner
-    values.push(options.owner_id) // Push owner id to values
-    filters.push(`owner_id = $${values.length} `); // Push the query with the new length of filters as a placeholder for owner_id
+  //Filter by owner_id
+  if (options.owner_id) {
+    values.push(options.owner_id) 
+    filters.push(`owner_id = $${values.length} `);
   }
 
-  if (options.minimum_price_per_night && options.maximum_price_per_night) { // Return properties within the price range provided by user
+  //Filter by cost per night
+  if (options.minimum_price_per_night && options.maximum_price_per_night) {
     values.push(options.minimum_price_per_night);
     filters.push(`cost_per_night >= $${values.length}`);
 
@@ -188,7 +191,8 @@ const getAllProperties = function (options, limit = 10) {
   queryString += `
   GROUP BY properties.id`
 
-  if (options.minimum_rating) { // Returns the minimum average rating specified by user
+  //Filter by average rating
+  if (options.minimum_rating) {
     values.push(options.minimum_rating);
     queryString += `
     HAVING avg(property_reviews.rating) >= $${values.length}`;
@@ -200,13 +204,14 @@ const getAllProperties = function (options, limit = 10) {
   LIMIT $${values.length};
   `; 
 
+  //Execute query
   return pool.query(queryString, values)
-  .then((res) => { 
+    .then((res) => {
     return res.rows;
   })
   .catch((err) => console.error(err.message));
 };
-//getAllProperties({ city: 'Birtle', minimum_price_per_night: 50360, maximum_price_per_night: 90224, minimum_rating: 3}); 
+
 
 //___________________________________________________________________________________________________________________
 
@@ -245,23 +250,6 @@ const addProperty = function (property) {
 };
 
 //___________________________________________________________________________________________________________________
-
-// addProperty({
-//   owner_id: 1,
-//   title: 'Lay Castle',
-//   description: 'Where all the magic happens',
-//   thumbnail_photo_url: 'www.image.com',
-//   cover_photo_url: 'www.photo.com',
-//   cost_per_night: 34562,
-//   street: 'Love',
-//   city: 'The city of love',
-//   province: 'Yukon',
-//   post_code: 'T6E',
-//   country: 'Canada',
-//   parking_spaces: 2,
-//   number_of_bathrooms: 3,
-//   number_of_bedrooms: 4
-// })
 
 
 
