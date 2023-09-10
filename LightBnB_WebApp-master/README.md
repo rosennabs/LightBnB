@@ -1,4 +1,8 @@
 # LightBnB
+This is a Lighthouse version of an airbnb. It allows home owners to rent their homes to people visiting their city.
+
+## Design
+The front-end design of the app isn't the best at the moment as more focus was given to setting up dynamic features in the back-end.
 
 ## Project Structure
 
@@ -53,3 +57,8 @@
 * `routes` contains the router files which are responsible for any HTTP requests to `/users/something` or `/api/something`. 
 * `styles` contains all of the sass files. 
 * `server.js` is the entry point to the application. This connects the routes to the database.
+
+## LightBnB ERD
+
+
+## Screenshots of LightBnB
