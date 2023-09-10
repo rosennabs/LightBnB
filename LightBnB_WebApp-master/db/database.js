@@ -156,13 +156,13 @@ const getAllProperties = function (options, limit = 10) {
 
   // Filter by city
   if (options.city) {
-    values.push(`%${options.city.charAt(0).toUpperCase() + options.city.slice(1).toLowerCase()}%`) // Convert city to sentence case and push it to values
+    values.push(`%${options.city.charAt(0).toUpperCase() + options.city.slice(1).toLowerCase()}%`); // Convert city to sentence case and push it to values
     filters.push(`city LIKE $${values.length} `); // Push the query with the new length of filters as a placeholder for city
   }
 
   //Filter by owner_id
   if (options.owner_id) {
-    values.push(options.owner_id) 
+    values.push(options.owner_id); 
     filters.push(`owner_id = $${values.length} `);
   }
 
