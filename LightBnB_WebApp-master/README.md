@@ -59,6 +59,15 @@ The front-end design of the app isn't the best at the moment as more focus was g
 * `server.js` is the entry point to the application. This connects the routes to the database.
 
 ## LightBnB ERD
+!["Screenshot of the LightBnB ERD"](https://github.com/rosennabs/LightBnB/blob/main/LightBnB_WebApp-master/public/screenshots/Lightbnb_ERD.png)
 
 
 ## Screenshots of LightBnB
+!["Screenshot of the LightBnB Homepage"](https://github.com/rosennabs/LightBnB/blob/main/LightBnB_WebApp-master/public/screenshots/Lightbnb_homepage.png)
+
+!["Screenshot of the LightBnB Search feature"](https://github.com/rosennabs/LightBnB/blob/main/LightBnB_WebApp-master/public/screenshots/Lightbnb_search.png)
+
+!["Screenshot of the LightBnB Create Listing page"](https://github.com/rosennabs/LightBnB/blob/main/LightBnB_WebApp-master/public/screenshots/Lightbnb_createListing.png)
+
+## How to Run
+Connect to LightBnb through your localhost port 3000. Use npm run local to initialize.
