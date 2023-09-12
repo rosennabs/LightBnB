@@ -1,3 +1,5 @@
+const properties = require("./json/properties.json");
+const users = require("./json/users.json");
 
 // Connect to the lightbnb database. Require pool connection for a multi-user purpose app 
 const { Pool } = require('pg');
@@ -11,7 +13,7 @@ const config = {
   database: process.env.DB_DATABASE,
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
-};
+}; 
 
 const pool = new Pool(config);
 
@@ -116,7 +118,7 @@ const addUser = function (user) {
 const getAllReservations = function (guest_id, limit = 10) {
   
   const queryString = `
-  SELECT reservations.*, properties.title as property_title, cost_per_night, avg(property_reviews.rating) as average_rating
+  SELECT reservations.id, properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
   JOIN reservations ON property_id = properties.id
   JOIN property_reviews ON reservation_id = reservations.id
@@ -125,15 +127,16 @@ const getAllReservations = function (guest_id, limit = 10) {
   ORDER BY reservations.start_date
   LIMIT $2;
   `;
-
+ 
   const values = [guest_id, limit];
 
   return pool.query(queryString, values)
     .then((res) => {
+      console.log(res.rows);
       return res.rows;
     })
     .catch((err) => console.error(err.message));
-}; 
+};  
 
  //___________________________________________________________________________________________________________________
 
